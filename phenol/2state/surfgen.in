@@ -1,0 +1,57 @@
+&GENERAL
+printlvl   = 3
+jobtype    = 1,
+natoms     = 13,
+atmgrp     = 1,1,1,1,1,1,2,3,3,3,3,3,3
+order      = 3,
+ngrp       = 2,
+groupsym(1,1)   = 2,2
+groupprty(1,1)  = -1,1
+inputfl    = 'hd.data'
+cntfl      = 'connect.in'
+/
+&MAKESURF
+eshift     = 0
+usefij     = .true.
+deg_cap    = 1D-2
+useIntGrad = .true.
+maxd       = 5d1
+dfstart    =  1
+intGradT   = 1D-3
+linSteps   = 0
+intGradS   = 1D-2
+TBas       = 1d-7
+energyT    = 5.0D4, 6D4,   1d5  , 1d6
+highEScale = 5D-1,  2D-1,  1D-1,  2d-2
+ckl_input  = ''
+ckl_output = 'ckl.out'
+rmsexcl    = -2
+npoints    =  8000
+gradcutoff = 85000.
+cpcutoff   = 60000.
+mng_grad   = 1.0d-2
+mng_ener   = 2.5d3
+SearchPath = 'data/ref', 'data/3'
+gmfptn  = 199*'geom'
+enfptn  = 199*'energy'
+grdfptn = 199*'cartgrd.drt1.state$.sp'
+cpfptn  = 199*'cartgrd.nad.drt1.state$.drt1.state$.sp'
+restartdir = 'intermediate'
+gcutoff    = 1D-7
+maxiter    = 3 
+orderall   = .false.
+followPrev = .false.
+toler      = 1D-3
+LSETol     = 1.0D-9
+flattening = 1.0D-10
+exactTol   = 1.0D-7
+printError = .true.
+gorder     = 10000.
+outputfl   = 'hd.data'
+flheader   = 'coefficient file of phenol S1-S2 Hd made with surfgen'
+w_energy   = 1D0
+w_grad     = 3D-1
+w_fij      = 3D-1
+/
+&potlib
+/
