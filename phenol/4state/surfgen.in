@@ -1,0 +1,18 @@
+&GENERAL
+printlvl   = 3 
+jobtype    = 1, 
+natoms     = 13,
+atmgrp     = 1,1,1,1,1,1,2,3,3,3,3,3,3
+order      = 3,
+ngrp       = 4,
+nSymLineUps= 1
+groupsym(1,1)   =  2,2, 1, 1
+groupprty(1,1)  = -1,1,-1,1
+basisfl    = ''
+inputfl    = 'hd.data'
+cntfl      = 'connect.in'
+/
+&MAKESURF
+/
+&potlib
+/
