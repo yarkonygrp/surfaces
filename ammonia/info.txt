@@ -1,0 +1,6 @@
+NH3 Coupled PES
+---------------
+From: virtualzx-nad/NH3-X-A-Coupled-PES
+
+2state: 2 state surface. Fit to MR-SDCI ab initio.
+
