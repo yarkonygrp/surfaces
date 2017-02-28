@@ -1,0 +1,724 @@
+.\"Modified from man(1) of FreeBSD, the NetBSD mdoc.template, and mdoc.samples.
+.\"See Also:
+.\"man mdoc.samples for a complete listing of options
+.\"man mdoc for the short list of editing options
+.\"/usr/share/misc/mdoc.template
+.Dd 3/11/13               \" DATE 
+.Dt surfgen.in 1      \" Program name and manual section number
+.Os Darwin
+.Sh NAME                 \" Section Header - required - don't modify 
+.Nm surgen.in ,
+.Nd General input file for 
+.Sy surfgen .
+.Sh SYNOPSIS             \" Section Header - required - don't modify
+This input file is used by coupled potential surface fitting program
+.Sy surfgen 
+and its potential evaluation library.
+For a detailed description of the program and the evaluation library, see
+.Xr surfgen 1 ,
+.Xr potlib 1
+.Pp
+Place
+.Sy surfgen.in
+in the same directory where
+.Sy surfgen
+is being called.
+.\"
+.Sh DESCRIPTION          \" Section Header - required - don't modify
+.Nm
+is a Fortran 90 namelist input file.  This file contains input parameters that 
+controls the behavior of 
+.Sy surfgen .
+This includes the 
+.Sy GENERAL
+namelist input that specify the job type and, along with other input files, 
+defines the molecular system, the electronic states, their symmetry, the internal
+coordinate basis and the expansion of Hd.  Most job types will have another namelist
+that defines parameters that are specific to a job, except for 
+.Em jobtype=-1 .
+.Pp
+The evaluator library also use the general namelist to define the expansion.  It
+also use a POTLIB namelist to define behaviors such as geometry logging and error
+estimation.
+.Pp
+Developed by 
+.An Yarkony group , Johns Hopkins University 
+2010-2013.
+.\"
+.Sh NAMELIST INPUT
+.Ss GENERAL
+General input that controls the expansion ansatz of the quasi-diabatic Hamiltonian (Hd),
+and the job to be performed by
+.Sy surfgen .
+Input files 
+.Ar connect.in ,
+.Ar coord.in ,
+and
+.Ar irrep.in
+also contain detailed parameters about the definition of the ansatz.
+.Pp
+.Sy List of Input Parameters
+.Bl -tag -width VariableNm -compact
+./"VariableName DefaultValue Descriptions
+.It jobtype
+.Sy INTEGER [0] 
+Specifies the type of job to be performed. Currently the following
+Types are implemented:
+.Bl -tag -width xxx 
+.It -1
+Use the molecule and connectivity definitions to generate all feasible symmetry 
+permutations and print them to the standard output.
+.It 0
+Do nothing during execution.  During initialization the program will construct 
+the expansion and read the coefficients from Hd storage file.   
+Used by potential evaluation libraries only. Requires namelist: 
+.Em POTLIB
+.It 1
+Construct fit Hd from ab initio data. Required namelist: 
+.Em MAKESURF
+.It 2
+Perform term selection procedure at all data points from the current expansion.  The selected basis 
+will effectively span the same space as the full expansion, removing linear dependencies. The new 
+expansion will be exported to file 
+.Ar basis.data .
+This can be used in a future fit to limit the expansion size.  If a fit is performed with a selected
+basis set, the basis set definition will needs to be supplie to the evaluation subroutine as well.
+.El
+.It natoms
+.Sy INTEGER [0]
+Number of atoms in the molecular system.   It is usually unwise to use the
+default value of this parameter.
+.It order
+.Sy INTEGER [2]
+Maximum order of the Hd expansion.  Order here means the number of basis functions
+that are multiplied together, should they be same type of coordinate or not,
+in the form of coordinates defined in 
+.Ar coord.in.
+.It CpOrder
+.Sy INTEGER []
+Maximum order for the off-diagonal coupling blocks.  When this option is not specified,
+lower than 0, or larger than 
+.Sy order ,
+the value of 
+.Sy order
+is used as default.   
+.It atmgrp
+.Sy INTEGER,dimension(natoms)
+Array that specify the equivalency of the atoms.  Must contain
+.Em natoms
+elements, each of which specify the group index of an atom.  Atoms in the same
+group are considered equivalent by the program and the permutations among them 
+will be generated as symmetry operations.
+.It nGrp
+.Sy INTEGER 
+Number of electronic state groups.  Each group contains a set of electronic 
+states that carry an irreducible representation.  For example, for OH radical 
+the lowest 3 states are contained in 2 groups, an E group with 2 states and 
+A group with 1 state.
+.It nSymLineUps
+.Sy INTEGER [1]
+Total number of symmetry lineups.  The program will generate basis matrices
+for all the symmetry line-ups, then combine them to yield the basis.  Any 
+basis that result from multiple line-ups will be merged to remove any possible
+redundancy.  This detection procedure only examines the expansion coefficients
+of the basis matrices and is based on the assumption that each coordinate is an
+independent degree of freedom.
+.It groupsym
+.Sy INTEGER,dimension(ngrp,nSymLineUps) 
+Index of permutational irreducible representations carried by each 
+of the state groups.  For each irrep, representation matrices for 
+every permutation must be supplied in input file irrep.in
+Irreps are indexed as they appear in 
+.Ar irrep.in
+If 
+.Va nSymLineUps
+is specified, then each column should contain a complete set of state symmetries that
+defines one symmetry line-up.  Note that even if two symmetry line-ups have different
+symmetry definitions, some block still may possess the same symmetry so adding symmetry
+ may not generate more basis for all the blocks.  Using non-pure symmetry also allows
+the Hamiltonian to experience constant rotations, which is in most cases removed by 
+symmetry near a symmetric geometry.   Use 
+.Va enfDiab 
+if you find it a problem.
+.It groupprty
+.Sy INTEGER,dimension(ngrp,nSymLineUps) 
+Inversion symmetry (parity) of each of the state group for each of the symmetry line-ups.
+Use -1 for anti-symmetric and 1 for symmetric.
+.It printlvl
+.Sy INTEGER [1]
+Controls the level of infomation printed to standard output. 
+0 is lowest and 5 is highest level.
+.It inputfl
+.Sy CHARACTER(255) [\(aqhd.data\(aq]
+Name of Hd expansion coefficient input file.  Hd will be initialized using
+these coefficients.  When empty or file not exist, uncoupled surface with 
+constant (but not identical) energies will be used to initialize Hd.
+.It basisfl
+.Sy CHARACTER(255) [\(aq\(aq]
+Name of basis expansion definition file, defined using 
+.Em jobtype=2
+mode.  The when generated, the basis file is named 
+.Ar basis.data ,
+and contains the index of all selected matrices for each block.
+.El
+.Ss MAKESURF
+This namelist contains parameters that control the surface fitting procedure.
+These are only used for
+.Em jobtype=1 .
+.Pp
+.Sy Input File Specifications
+These options tell the program where to look for 
+.Em ab initio 
+data.  The data should be divided into groups of data points, and the information
+of each group is stored in a separate directory.  The program will search for data
+in each of these directories to determine which piece of data is available, and 
+append all available data to fitting set.  This is a new functionality in 2.1 and
+is intended to allow the program to use results from calculations where not all
+data are obtained.  For example, calculation of only energy, a fewer number of 
+states, or where states are well separated and couplings are not calculated.  
+It is also intended to make data storage more managable and transparent by grouping
+different data in separate directories.
+.br
+The name of input files can be specified for each directory.  The filenames of 
+gradients and coupling data are expected to contain one and two wildcard characters
+\(aq$\(aq which acts as a placeholder for the indices of states.
+.Bl -tag -width VariableNm -compact
+.It SearchPath
+.Sy CHARACTER(255),dimension(100) [\(aq.\(aq,99*\(aq\(aq]
+Paths of directories where the program should look for sets of input file.  
+Each path should contain all the input information of a group of points.
+Including geometries, energies, and optionally energy gradients and couplings.
+\(aq.\(aq has to be included for the program to search the current path.
+.It noteptn
+.Sy CHARACTER(255),dimension(100) [100*\(aqnote\(aq]
+Specifies the filename of the optional file where a brief note is kept to explain
+where the geometries in the current path are and what data are available.  The
+first line of this file will also be printed to standard output when the program
+reads this directory. No wildcard allowed.  Optional.
+.It gmfptn
+.Sy CHARACTER(255),dimension(100) [100*\(aqgeom.all\(aq]
+Name of geometry input file.   No wildcard characters allowed.  Required.
+.It enfptn
+.Sy CHARACTER(255),dimension(100) [100*\(aqenergy.all\(aq]
+Name of energy input file.  No wildcard characters allowed. Required.  If the file
+does not contain all the state, please add in the first line of the file
+.br
+STATES 
+.Va st1 st2
+.br
+where 
+.Va st1
+and 
+.Va st2
+are the lowest and highest state of which the energy is included in this file.
+For example, if the directory contains data from hessian calculation on state 3,
+then the line should be
+.br
+STATES 3 3
+.It grdfptn
+.Sy CHARACTER(255),dimension(100) [100*\(aqcartgrd.drt1.state$.all\(aq]
+Pattern for energy gradient input file.  Has 1 wildcard character which holds the
+slot for the index of the state of which the gradients are calculated.  Optional.
+The program will search all the states that has an energy data in energy input file.
+.It cpfptn
+.Sy CHARACTER(255),dimension(100) [100*\(aqcartgrd.drt1.state$.drt1.state$.all\(aq]
+Pattern for derivative coupling input file.  Has 2 wildcard characters which holds the
+slot for the indices of the pair of states between which the couplings are calculated.  
+Optional.
+The program will search all the pairs of states that both has an energy data in energy input file.
+.El
+.Pp
+.Sy Fitting and Saving Diabats
+When a diabatic representation is available for the system, the program can construct the initial 
+guess of Hd from the values and gradients of diabats, which should be saved in 
+.Ar diabats.data
+file.  This is a block by block fit which is much less expansive than one iteration of the actual
+fitting procedure.   One may choose to just generate the Hamiltonian without fitting by setting
+maxiter to 0 or -1. Alternatively, one can use this diabats as initial guess and refine it with
+fitting procedure, which is generally recommended. 
+When this functionality is used to reconstruct Hd from a different expansion scheme, the user would
+first use 
+.Va parseDiabats
+option to generate a
+.Ar diabats.data
+file, then copy it to the new input directory and include 
+.Va loadDiabats
+option in the new fit to perform the reconstruction.
+One can also use this if an approximate diabatrization scheme is available, in which case the approximate
+diabatic representation would be saved to 
+.Ar diabats.data
+with proper formatting to be used as initial guess.
+.Bl -tag -width VariableNames -compact
+.It loadDiabats
+.Sy LOGICAL [.false.]
+Construct initial Hd by fitting value and gradients of all data points in diabatic representation.  
+For each block, a least-squares fit will be performed, with diagonal shifts of 10^-1 to 
+avoid problems with singularity.  
+.It parseDiabats
+.Sy LOGICAL [.false.] 
+Save values and gradients of the current Hd at all data points to 
+.Ar diabats.data
+file.
+.El
+.Pp
+.Sy Data Selection and Weighing
+.Bl -tag -width VariableNm -compact
+.It npoints 
+.Sy INTEGER [0]
+Number of points to be fit.  Note that if the program cannot find the specified 
+number of points, the variable will be adjusted to the actual number of data points
+read from files.  
+If there are more data than specified, the program will only use the first
+.Va npoints
+data points.
+.It eshift
+.Sy DOUBLE PRECISION [.0]
+A uniform shift applied to all 
+.Ar ab initio 
+energies.
+.It gcutoff
+.Sy DOUBLE PRECISION [1D-14]
+The threshold below which gradients will be considered vanished and treated as exactly 0.
+.It usefij
+.Sy LOGICAL [.true.] 
+Specifies if the derivative couplings instead of derivative coupling times
+energy differences will be used as coupling input.  Derivative couplings approach
+infinity at intersections while coupling times energy difference remain well 
+behaved everywhere.  
+.It w_energy
+.Sy DOUBLE PRECISION [1.]
+Weight factor for energy equations.  This factor is multiplied with point weights
+and high energy scaling weights to yield the final weight of equations.
+.It w_grad
+.Sy DOUBLE PRECISION [1.]
+Weight factor for energy gradient equations. This factor is multiplied with point weights
+and high energy scaling weights to yield the final weight of equations.
+.It w_fij
+.Sy DOUBLE PRECISION [1.]
+Weight factor for coupling equations. This factor is multiplied with point weights
+and high energy scaling weights to yield the final weight of equations.
+.It energyT
+.Sy DOUBLE PRECISION,dimension(10) [1D30]
+.It highEScale
+.Sy DOUBLE PRECISION,dimension(10) [1.]
+.Em energyT
+specifies a series of thresholds for the downscaling of equations when the ab initio
+energy of an electronic state is very high.   When
+.Em E>energyT(i) ,
+weight 
+.Sy highEScale(i)
+is applied to the energy, gradient and derivative coupling equations that involve 
+that state.   For couplings, the higher state is used to determine the weight.  
+The highest possible energy bracket (with lowest weight) will be used.
+.It ediffcutoff
+.Sy DOUBLE PRECISION [20.]
+.It nrmediff
+.Sy DOUBLE PRECISION [2D4]
+The weight for derivative coupling equations is weighed down by factor
+.Sy nrmediff/(\(*DE+ediffcutoff) .
+This weighing procedure is due to the fact that coupling times energy difference
+is being fit instead of the coupling itself, which is singular near intersections.
+Increasing the weight according to energy difference ensures that residue couplings
+are properly minimized, and the cutoff term prevents problematic singular behavior.
+This prevents the mathematical complexity of directly taking deratives of the couplings
+with respect to fitting coefficients, which will give rise to term that correspond
+to change in energy difference.
+.El
+.Pp
+.Sy Fitting Algorithm and Acceleration
+.Bl -tag -width VariableNm -compact
+.It maxiter
+.Sy INTEGER [3]
+Maximum number of iterations for the fitting algorithm.  When set to 0, the program will not
+perform the fit, but only evalaute the errors, calculate gradients of the Lagrangian, and 
+generate proper output files, if specified.  Same procedure will happen when set to -1, 
+except that the program will not calculate the Lagrangian gradients.
+.It toler
+.Sy DOUBLE PRECISION [1D-3]
+Convergence tolerance for change in expansion coefficient.
+.It maxd
+.Sy DOUBLE PRECISION [1D0]
+Maximum allowed change in Hd expansion coefficients between iterations. 
+.It dfstart
+.Sy INTEGER [0]
+Iteration at which differential convergence will be started.  The normal equations
+will be constructed for the 
+.Em change
+of coefficients instead of expansion coefficients themselves.  This will usually
+result in better fit and allows dumping while lifting the flattening term to very
+small value.  However, this convergence mode has more tendency to experience 
+oscillations and should not be enabled if the fit is qualitatively incorrect.
+.br
+It is recommended that when differential convergence is enabled, set
+.Em DijScale=1
+.It exactTol 
+.Sy DOUBLE PRECISION [1D-12]
+Eigenvalue cutoff when solving constrained normal equations.  This parameter dictates
+how accurate the exact equations will be reproduced.
+.It LSETol 
+.Sy DOUBLE PRECISION [1D-7]
+Diagonal shift on the normal equations when solving linear equations.  Larger value leads 
+to more stable but usually slower convergence.  
+.It flattening
+.Sy DOUBLE PRECISION [1D-8]
+Flattening term that will be included in the objective function.  In differential 
+convergence mode, this option will remove contributions that have very small contributions
+to the quality of fit.  As opposed to 
+.Ar LSETol ,
+which only changes the convergence procedure but does not affect the converged results,
+.Ar flattening 
+changes the Lagrangian and thus will result in a different converged Hd.
+.It linSteps
+.Sy INTEGER [0]
+Number of linear steps to perform.  When greater than 0, the program will break the 
+predicted change into 
+.Sy linSteps
+smaller steps and try to find the step length that yields the smallest gradient
+for the Lagrangian.  Step sizes are automatically shrinked when the norm of the 
+gradient increases.
+.It linNegSteps
+.Sy INTEGER [0]
+Number of linear steps to be taken to the opposite direction of the predicted change
+but with the same size.  This should only be used when the normal equations fail
+to give the correct direction of changes and the linear steps towards the positive
+direction encounter an immediate increase in the norm of Lagrangian.
+.It DijScale
+.Sy DOUBLE PRECISION [1.]
+This option controls the multiplier of the derivative of eigenvectors with respect
+to the fitting coefficients during construction of the normal equations.  
+When set to 0, the dependency of eigenvectors on fitting coefficients are ignored.  
+When set to 1, the first order response of eigenvectors with respect to the change 
+in fitting coefficients is fully implemented.
+It is recommended to have 
+.Em DijScale=1.0 
+in most cases.   It only needs to be turned down when eigenvectors are changing 
+too rapidly and gives oscillations.
+.It scaleEx
+.Sy DOUBLE PRECISION [1.]
+Uniformly scale all exact equations.  Since there is no weight for exact equations,
+this is done through scaling the gradient of the Lagrangian with respect to Lagrange
+multipliers.  This option normally does not need to be changed.  Only use it when 
+convergence problems occur.
+.El
+./"  DELETED: EXPANSION_INPUT, EXPANSION_OUTPUT
+.Pp
+.Sy Eigenvector Ordering and Phasing
+.Bl -tag -width VariableNm -compact
+.It enfDiab
+.Sy INTEGER [0]
+Specify a point where diabatic and adiabatic representation will be forced to coincide.
+Every iteration the program will force the eigenvector of this point to be unit vectors.
+The off-diagonal element will be fit to 0 and the derivative of eigenvectors at this 
+point (Dij) will also be 0 under all conditions.  
+.br
+The adiabatic-diabatic transformation is subject to a globally constant transformation.
+Since such transformation does not affect the Hamiltonian in any manner, it cannot be 
+determined from the fitting procedure itself. When states have different symmetry, 
+such degree of freedom can be removed through the use of correct symmetry.  When some
+states carry the same symmetry, this option is used to eliminate the extra degree of freedom.
+.It gorder
+.Sy DOUBLE PRECISION [1D-3]
+Threshold for energy difference below which the states will by ordered by gradients 
+instead of absolute energy.  This option is ignored when 
+.Em followPrev=.true.
+.It ckl_input
+.Sy CHARACTER(255) [\(aq\(aq]
+Input file that contains the initial guess of eigenvectors at selected data points.
+Each line of the file contains the index of a point and the eigenvector of that point.
+Repeating input will be overiden but the one that is last encountered in the file.
+Any points that are not specified in this file will use the diagonalization of initial
+Hd to generate initial eigenvectors.  
+When left empty or file not exist, all the eigenvectors are initialized by diagonalizing
+initial Hd.
+.It ckl_output
+.Sy CHARACTER(255) [\(aqckl.out\(aq]
+Output file that contains the final eigenvectors at each data point.
+.It guide
+.Sy CHARACTER(255) [\(aq\(aq]
+Input file that contains reference wavefunctions at a certain set of points that will be
+used to determine the ordering of states.  This serves as a weaker guiding tool than 
+`ckl_input` because the wave functions and their signs are still generated by diagonalization
+and matching of couplings.  As a result, approximate vectors such as unit vectors can be used
+as `guide`.   
+.It followPrev
+.Sy LOGICAL [.false.]
+Whether the new eigenvectors will be ordered and phased to match the vectors 
+from the previous iteration.  This allows a more consistent and smoother convergence
+but may increase the tendency to match the states in a non-optimal way.
+.El
+.Pp
+.Sy Local Coordinate Construction
+.Bl -tag -width VariableNm -compact
+.It useIntGrad
+.Sy LOGICAL [.true.]
+Specifies wether the gradients and derivative couplings will be fit using Cartesian 
+components or a transformed coordinate constructed at each point that removes the
+null equations (translations, rotations, relative motion of dissociated fragments 
+and symmetry zeros).  This coordinate is constructed by obtaining the eigenvectors
+of matrix B^T.B, where B is the Wilson\(aqs B matrix.
+.It intGradT
+.Sy DOUBLE PRECISION [1D-3]
+Threshold for eigenvalue cut off of B^T.B matrix.   When an eigenvalue is lower than
+.Em intGradT ,
+the coordinate is considered non-internal and removed from the fitting equaitons.
+.It intGradS
+.Sy DOUBLE PRECISION [1D-1]
+Threshold for diminished weights.  New coordinates that correspond to eigenvalues lower than
+.Em intGradS 
+will be weighed by factor
+.Sy ev/intGradS ,
+where
+.Sy ev
+is the eigenvalue.
+.It deg_cap
+.Sy DOUBLE PRECISION [1D-5]
+Threshold for energy difference below which the states will be considered quasi-degenerate.
+Intersection adapted coordinate will be used for these electronic states, by rotating the 
+degenerate states to make all pairs of 
+.Em g
+and 
+.Em h
+vectors orthgonal.  Gradients and couplings for all states that are quasi-degenerate are needed
+to perform the rotations.   
+.It deggrdbinding
+.Sy LOGICAL [.true.]
+When this parameter is set to true, the program will remove all gradients and couplings from a
+quasi-degenerate group of states if any of the data required to perform rotation is missing.
+.El
+.Pp
+.Sy Removal of Null Space
+.Bl -tag -width VariableNm -compact
+.It TBas
+.Sy DOUBLE PRECISION [1D-6]
+Theshold for eigenvalue cutoff of the primitive basis overlap matrix.  This 
+controls the degree of linear dependency that will be allowed in the basis 
+constructed for the fit.
+.It ecutoff
+.Sy DOUBLE PRECISION [1.]
+Energy threshold in 
+.Em hartree
+above which the energy data will not be considered in null space removal procedure.
+This is used to prevent the equations that are irrelevant from introducing extra
+degrees of freedom.
+.It egcutoff
+.Sy DOUBLE PRECISION [0.6]
+The gradients and couplings data of a point will not be considered in null space
+removal procedure when the ab initio energy of the lowest state is higher than 
+this value.  Similar to 
+.Sy ecutoff ,
+this parameter is used to prevent irrelevant high energy data points from introducing
+unnecessary degrees of freedom.
+.El
+.Pp
+.Sy Input and Output
+.Bl -tag -width VariableNm -compact
+.It restartdir
+.Sy CHARACTER(255) [\(aq\(aq]
+When not empty, the program will store eigenvectors and coefficients of Hd in this directory.
+.It outputfl
+.Sy CHARACTER(255) [\(aq\(aq]
+Name of the output file that will store the fit surface.
+.It flheader
+.Sy CHARACTER(255) [\(aq----\(aq]
+Header that will be printed into the description field of Hd storage file.
+.It rmsexcl
+.Sy INTEGER [0]
+This parameter controls if low weight points will be included in the RMS analysis.
+Points with weight lower than 
+.Sy -1/rmsexcl 
+will be excluded when 
+.Em rmsexcl<0 .
+No effect when 
+.Em rmsexcl>=0
+.It printErr
+.Sy LOGICAL [.false.]
+This option specifies if geometry and error information will be generated for error analysis procedure in `libsurfgen`.
+Geometries will be stored in file `refgeom` and error info will be stored in `error.log`.
+.El
+.Pp
+.Sy Automatic data point management
+The user can use the 
+.Em mn
+keyword in 
+.Ar points.in
+to specify ranges of data points to be added through automatic data point management module.  These data points will
+starts with a weight of 0 and be automatically adjusted to their full weight when they are considered qualitatively 
+correct by meeting the criteria specified by the following parameters.  The management module will check over all 
+managed data points and add data before every iteration.  Usually one can perform a fit for a core `skeletal`
+region, then use the data point management procedure to add the bulk of the data points.  This can usually speed up
+the growing of domain of definition and helps the user to identify problematic data points that are inconsistent with
+other points or too far from well-defined domain.
+.Bl -tag -width VariableNm -compact
+.It mng_ener
+.Sy DOUBLE PRECISION [2000.]
+Energy error threshold.  A point can only be added if all energy errors are below this threshold. The number is given
+in cm^-1.
+.It mng_grad
+.Sy DOUBLE PRECISION [3d-2]
+Gradient and coupling error threshold.  A point can only be added of errors of all energy gradient or coupling (times
+energy difference) components are below this value.  In atomic units.(bohr^-1)
+.It mng_scale_ener
+.Sy LOGICAL [.false.]
+This parameter specifies if the energy errors will be scaled by the high energy scaling schemes.  This should not be 
+set to true if the scaling weight is extremely small.
+.It mng_scale_grad
+.Sy LOGICAL [.true.]
+This parameter specifies if the gradient and coupling errors will be scaled by the high energy scaling schemes.  
+.El
+.Pp
+.Ss POTLIB
+Parameters that control the behavior of the potential evaluation library.
+.br
+.Em Parsing evaluations
+The evaluation subroutines has the capability of performing analysis of the geometries of the point of evaluation, 
+including the minimum distance to a set of reference points where ab initio data are available, an estimation of 
+eror of energies using the fitting error of gradients at the nearest reference point.  These informatio are stored
+along with the time of evaluation, the geometry, energies of each electronic states and the surface the trajectory 
+is currently moving on.  
+.br
+These information will be stored in files `trajdata$x.csv`.  Each file contains information of one complete trajectory.
+The data are stored in comma separated values(CSV) format. 
+.Sy General parsing options
+.Bl -tag -width VariableNm -compact
+.It parsing
+.Sy LOGICAL [.false.]
+This option determines if evaluation geometries will be recorded and analyzed.
+.It timeeval
+.Sy LOGICAL [.false.]
+This option determines if the program will try to time each of the individual task performed during evaluation and 
+print out the time cost.
+.El
+.Pp
+.Sy Distance evaluations
+To help determine if trajectories are exporing areas that are not populated by existing data points, the evaluation program
+has the capability to evaluate the minimum distance to all data points, referred to as reference points.  The distances are calculated
+in a subset of internal coordinates natively defined by `coord.in`.  With each reference point, the program will perform all the
+symmetry operations to find the minimum distance among symmetry related points.  Although this implies a significantly large
+amount of distance calculations for every evaluation, the time required for such analysis is in fact negligible in most
+situations as a result of the method used by the program to identify the potential low distance points.
+.br
+The program maintains the lower and upper bound of distances at each point of evaluation and updates these lists using
+triangular inequalities using the size of displacement when a new evaluation is performed.  In most cases, the evaluations
+are made at a series of adjacent points.  As a result, the bounds of distances change only slightly per evaluation and the
+small subset of reference points that can potentially have the smallest distance, usually only 2 or 3 points, can be deteremined
+with little cost.  Exact distances are only evaluated at these few reference points and the bounds are tighted for them.
+.Bl -tag -width VariableNm -compact
+.It calcmind
+.Sy LOGICAL [.false.]
+This option controls if the minimum distance to the reference geometries will be calculated. 
+.It mindcutoff
+.Sy DOUBLE PRECISION [1D-5]
+Desired precision for minimum distances.  When set to nonzero, this allows the program to skip reevaluation of distances when the
+inequality relations along are enough to determine the minimal distances at the new geometry.  Also when the distances from two 
+reference geometries are estimated to be within this range, or more precisely when the lower bound of distance to reference point
+A is not lower than the upper bound of distance to reference point B by more than `mindcutoff`, point A will be eliminated from 
+the list of potential minimal distance points because its distance will be at best almost the same as point B.   Increasing this
+value will slightly decrease the accuracy of the distance, but significantly reduce the number of evaluation needed.  The default
+value is found to yield reliable distance and at the same time only require a very small number of distance evaluations. Thus
+it is not recommended to change this value by significant amount.
+.It gflname
+.Sy CHARACTER(255) [\(aqrefgeom\(aq]
+This file stores the geometries of all the reference points.   It can be generated by enabling option `printError` during fitting.
+.It nrpts
+.Sy INTEGER [20]
+The number of reference points contained in reference geometry input file.  Note that the default will almost always have to be 
+changed.
+.It ndcoord
+.Sy INTEGER [3]
+Number of internal coordinates that will be used to define the distances.  No more than 200 coordinates can be used. 
+.It dcoordls
+.Sy INTEGER,dimension(ndcoord)
+Index of internal coordinates used to define distances.  Note that the index of full internal coordinate list is used, which 
+includes coordinates generated by symmetry operations.  Please refer to the list in standard output at the beginning of fitting
+procedure for the definition of these coordinates.   The program does not require or try to determine the set of coordinate 
+used is symmetric or linear independent.
+.El
+.Pp
+.Em Energy error estimation
+The evaluation program use the fitting error of energy and energy gradients at the most adjacent reference point, along with the
+displacement to that reference point, to estimate the error of fit energy at the current evaluation point, using a first order
+approximation.  This value is only meaningful when the reference point is sufficiently nearby, and is therefore not a good 
+criteria for deciding if new points should be generated.  Rather, this is used to monitor if the trajectory enters region that
+have been populated by has large fitting error.
+.Bl -tag -width VariableNm -compact
+.It calcErr
+.Sy LOGICAL [.false.]
+This option controls if the first order estimation of fitting error will be estimated.
+.It errflname
+.Sy CHARACTER(255) [\(aqerror.log\(aq]
+File that contains fitting error to energy and energy gradients.  This file can be generated by enabling option `printError`
+during the fitting procedure.
+.El
+.Pp
+.Em Molden output
+The evaluation subroutine can take the geometries of evaluatoin and construct a molden file to enable visualization of trajectories.
+Each trajectory will generate a file named `molden$x.all`, where $x is the index of the trajectory.  Geometries are converted to 
+Angstroms in this file.
+.Bl -tag -width VariableNm -compact
+.It atomLabels
+.Sy CHARACTER(3),dimension(20) [\(aq\(aq]
+Atom labels for each group of atoms.  Atom groups of each atoms are defined by option `atmgrp` in the GENERAL namelist.   These
+names are only used to mark atoms in the molden file.
+.It molden_p
+.Sy INTEGER [100]
+One geometry will be included in the file every `molden_p` evaluations.  This is useful because trajectories usually compose of 
+a very large number of geometries that have very small displacements.  This option thus allows to generate a molden file that
+contains a reasonable number of geometries with noticable distances. 
+.It m_start
+.Sy INTEGER [100]
+The number of evaluations before the program starts to store geometries to the molden file.
+.El
+.Pp
+.Em Potential modification
+The evaluation subroutine allows diagonal corrections with very simple forms to allow users to make slight modifications of the
+surface which will not change the descriptions of the conical intersections.  Possible causes may be to correct size inconsistency
+problems with the ab initio data, or to shift the energies by a fixed amount.  This functionality is currently very limited and 
+is still in construction
+.Bl -tag -width VariableNm -compact
+.It eshift
+.Sy DOUBLE PRECISION [0d0]
+Flat shift of all energies.
+.It nfterms
+Number of Morse-potential type diagonal shifts.  The shift takes the forms of 
+.br
+.Sy D*(1-w/w0)^2
+.br
+D usually specifies the change in dissociation energy, which is defined by options `fcoef`.   w is an internal coordinate defined
+in `coord.in`, the index of which is defined by `fterm`.  Parameter `w0` determines where this correction will vanish, which is 
+determined by option `forig`.  Analytical gradients are also corrected with the gradients of this shift term.  The same shift will
+be applied to all diagonal blocks.   Note that even though positions of conical intersections will not move, the derivative 
+coupling vectors may experience small changes.
+.It fterm
+.Sy INTEGER,dimension(:) [0]
+Which one of the internal coordinates will be used to perform the shift.  The internal coordinates are defined by `coord.in`. 
+Note that the indexing includes coordinates generated by symmetry. Please refer to the output of surfgen fitting program to the 
+definition of these coordinates.   The program does not assume or check if the set of coordinates used are symmetric. 
+.It fcoef
+.Sy DOUBLE PRECISION,dimension(:) [0d0]
+Expansion coefficients of each Morse form corrections, shown as D in the above equations.   Normally this has to be a small number.
+.It forig
+.Sy DOUBLE PRECISION,dimension(:) [1d0]
+Origin where the correction will vanish.  Usually the value of the above defined coordinate at the equilibrium geometries of the 
+bound structure is used.  Small changes usually make no significant differences.
+.El
+.\" .Sh DIAGNOSTICS       \" May not be needed
+.\" .Bl -diag
+.\" .It Diagnostic Tag
+.\" Diagnostic informtion here.
+.\" .It Diagnostic Tag
+.\" Diagnostic informtion here.
+.\" .El
+.Sh SEE ALSO 
+.\" List links in ascending order by section, alphabetically within a section.
+.\" Please do not reference files that do not exist without filing a bug report
+.Xr connect.in 1
+.Xr coords.in 1 ,
+.Xr irrep.in 1 ,
+.Xr hd.data 1 ,
+.Xr points.in 1 ,
+.Xr potlib 1 ,
+.Xr surfgen 1 ,
+.Sh BUGS              \" Document known, unremedied bugs
+Please send bug reports to 
+.An Xiaolei Zhu Aq virtualzx@gmail.com
+.\" .Sh HISTORY           \" Document history if command behaves in a unique manner
