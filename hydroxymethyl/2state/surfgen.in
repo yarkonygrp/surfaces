@@ -12,54 +12,6 @@ order=3
 inputfl='hd.data'
 /
 &MAKESURF
-SearchPath='data','data3'
-enfDiab=48
-dijscale=1d0
-dfstart=1
-deg_cap=0.8D-2
-intGradS=1D-1
-useIntGrad=.true.
-intGradT=1D-3
-usefij=.true.
-rmsexcl=-2
-restartdir = restart
-cpfptn=150*'cartgrd_nad.drt1.state$.drt1.state$.all'
-npoints=10441
-gcutoff=1D-7
-maxiter=10
-toler=1D-3
-LSETol=1.0D-7
-exactTol=1D-10
-flattening=1D-7
-maxd=1d0
-tbas=1d-7
-gorder=800
-outputfl='hd.data2'
-flheader='high order tester'
-w_energy=1D0
-w_grad=3D-1
-w_fij=3D-1
-nrmediff=5D3
-ediffcutoff=2D3
-ndstart=200
-ndiis=5
-guide='ckl.guide'
-ckl_input=''
-ckl_output='ckl.out'
-printError=.true.
-energyT=    3.4D4,  4.0D4,  1.0D5, 1.0D6
-highEScale=5.0D-1, 2.0D-1, 1.0D-1, 2.0D-2
-followPrev=.false.
-cpcutoff=5.0D4
-gradcutoff=12.0D4
-mng_scale_ener=.true.
-mng_scale_grad=.true.
-mng_grad = 5.0d-1
-mng_ener = 2.0d3
-loaddiabats=.false.
-parsediabats=.true.
-jshift=0.0
-autoshrink=.false.
 /
 &potlib
 /
