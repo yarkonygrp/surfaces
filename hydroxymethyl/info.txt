@@ -1,4 +1,7 @@
 CH2OH Surfaces
 --------------
-3state: 3 state surface. Fit to MR-SDCI ab initio.
-3state.shifted: First diabat shifted by -1500 cm-1.
+3state: 3 state surface. Fit to MR-SDCI ab initio.  | JCP, 2017, 146: 134302 
+3state.shifted: First diabat shifted by -1500 cm-1. | JCP, 2017, 146: 134302
+
+2state: 2 state surface fit to lowest two adiabatic | 
+        states of 3state.shifted surface.           |       
