@@ -4,7 +4,7 @@ LIBOBJS=hddata.o combinatorial.o progdata.o libutil.o libsym.o libinternal.o \
 	io.o potlib.o getver.o
 
 FC:=gfortran
-FCOPT:=-g
+FCOPT:=-g -fdefault-integer-8 -fopenmp
 
 all:	lib $(OBJECTS)
 	$(FC) $(FCOPT) -c evalsurf.f90
