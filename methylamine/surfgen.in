@@ -11,55 +11,5 @@ order=3
 inputfl='hd.data'
 cntfl='connect.in'
 /
-&MAKESURF
-highEScale=5D-1,2D-1,1D-1,5D-2,1D-2,1D-3
-energyT=5.5D4,6D4,6.5D4,7D4,7.5D4,9D4
-jshift=0.0
-autoshrink=.false
-deg_cap=1D-3
-eshift=95.65541723
-usefij=.false.
-dijscale=1d0
-intGradS=1D-2
-useIntGrad=.true.
-intGradT=1D-3
-rmsexcl=-2
-npoints=7793
-gcutoff=1D-5
-maxiter=6
-grdfptn= 'cartgrd.drt1.state$.all'
-cpfptn= 'cartgrd_total.drt1.state$.drt1.state$.all'
-toler=1D-3
-LSETol=1.0D-8
-flattening = 1d-10
-exactTol=1D-9 
-maxd=1d0
-tbas=1d-7 
-ckl_output='ckl.out'
-ckl_input=''
-dfstart= 1
-gorder=1000.
-outputfl='hd.data2'
-flheader='high order tester'
-w_energy=1D0
-w_grad=6D-1
-w_fij=2D-1
-nrmediff=2D3
-ediffcutoff=2D3
-ndstart=200
-ndiis=2
-parseDiabats=.true.
-loadDiabats=.false.
-printError=.true.
-/
 &potlib
-atomlabels='N','C','H','H','H','H'
-nrpts=7793
-parsing=.true.
-calcmind=.true.
-calcerr=.true.
-ndcoord=15
-dcoordls(1)=62
-nfterms=0
-eshift=0d0
 /
