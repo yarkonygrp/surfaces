@@ -1,0 +1,3 @@
+Two states potential energy surface of methylamine.
+RMS gradient error:2.99%
+RMS energy error:78.34cm-1
