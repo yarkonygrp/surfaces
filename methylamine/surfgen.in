@@ -1,0 +1,15 @@
+/
+&GENERAL
+printlvl=5
+jobtype=1
+natoms=7
+atmgrp=1,2,3,4,5,6,6
+ngrp=2
+groupsym=1,2
+groupprty=1,-1
+order=3
+inputfl='hd.data'
+cntfl='connect.in'
+/
+&potlib
+/
